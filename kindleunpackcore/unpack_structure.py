@@ -78,7 +78,7 @@ class fileNames:
             unipath.mkdir(self.k8text)
 
     # recursive zip creation support routine
-    def zipUpDir(self, myzip, tdir, localname):
+    def zipUpDir(self, myzip, tdir, localname, compress_type = zipfile.ZIP_DEFLATED):
         currentdir = tdir
         if localname != "":
             currentdir = os.path.join(currentdir,localname)
@@ -88,12 +88,13 @@ class fileNames:
             localfilePath = os.path.join(localname, afilename)
             realfilePath = os.path.join(currentdir,file)
             if unipath.isfile(realfilePath):
-                myzip.write(pathof(realfilePath), pathof(localfilePath), zipfile.ZIP_DEFLATED)
+                myzip.write(pathof(realfilePath), pathof(localfilePath), compress_type)
             elif unipath.isdir(realfilePath):
                 self.zipUpDir(myzip, tdir, localfilePath)
 
     def makeEPUB(self, usedmap, obfuscate_data, uid):
         bname = os.path.join(self.k8dir, self.getInputFileBasename() + '.epub')
+        bname_zip = os.path.join(self.k8dir, self.getInputFileBasename() + '.zip')
         # Create an encryption key for Adobe font obfuscation
         # based on the epub's uid
         if isinstance(uid,text_type):
@@ -164,4 +165,11 @@ xmlns:enc="http://www.w3.org/2001/04/xmlenc#" xmlns:deenc="http://ns.adobe.com/d
         self.outzip.writestr(nzinfo, mimetype)
         self.zipUpDir(self.outzip,self.k8dir,'META-INF')
         self.zipUpDir(self.outzip,self.k8dir,'OEBPS')
+        self.outzip.close()
+
+        # ready to build zip
+        self.outzip = zipfile.ZipFile(pathof(bname_zip), 'w')
+
+        # 
+        self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_STORED)
         self.outzip.close()

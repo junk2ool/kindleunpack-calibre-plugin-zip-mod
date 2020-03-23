@@ -64,6 +64,10 @@ class InterfacePlugin(InterfaceAction):
         create_menu_action_unique(self, m, _('KF8 to ePubs')+'...', 'mimetypes/epub.png', _(tool_tip),
                                                  False, triggered=partial(self.multi_dispatcher, book_ids, u'AZW3'))
 
+        tool_tip = 'Convert the KF8 portions of the selected AZW3s to ZIPs and add them to their respective books.'
+        create_menu_action_unique(self, m, _('KF8 to ZIPs')+'...', 'mimetypes/zip.png', _(tool_tip),
+                                                 False, triggered=partial(self.multi_dispatcher, book_ids, u'ZIP'))
+
         tool_tip = 'Extract the PDFs from the AZW4 formats and add them to their respective books.'
         create_menu_action_unique(self, m, _('Extract PDFs')+'...', 'mimetypes/pdf.png', _(tool_tip),
                                                  False, triggered=partial(self.multi_dispatcher, book_ids, u'AZW4'))
@@ -161,6 +165,15 @@ class InterfacePlugin(InterfaceAction):
             if kindle_obj.isEncrypted and convert_menu is not None:
                 convert_menu.setEnabled(False)
 
+            # Extract ZIP from the unpacked contents and add to current book's formats.
+            convert_menu = None
+            if kindle_obj.isKF8 or kindle_obj.isComboFile:
+                tool_tip = 'Convert standalone KF8 file to ZIP.'
+                convert_menu = create_menu_action_unique(self, sm, _('KF8 to ZIP')+'...', 'mimetypes/zip.png', _(tool_tip),
+                                            False, triggered=partial(self.extract_element, kindle_obj, book_id, u'ZIP', False))
+            if kindle_obj.isEncrypted and convert_menu is not None:
+                convert_menu.setEnabled(False)
+
         # Add menu item to go to plugin configuration.
         m.addSeparator()
         tool_tip = 'Configure the KindleUnpack plugin\'s settings.'
@@ -220,6 +233,12 @@ class InterfacePlugin(InterfaceAction):
             goal_format = 'EPUB'
             status_msg_type='KF8 books'
             action_type='Unpacking ePubs from'
+        elif target_format == 'ZIP':
+            target_format = 'AZW3'
+            attr = 'isKF8'
+            goal_format = 'ZIP'
+            status_msg_type='KF8 books'
+            action_type='Unpacking ZIPs from'
         elif target_format == 'AZW4':
             attr = 'isPrintReplica'
             goal_format = 'PDF'
@@ -228,7 +247,7 @@ class InterfacePlugin(InterfaceAction):
         books_info = self.gatherKindleFormats(book_ids, [target_format], goal_format)
         # If we have stuff ... send it on its way to the pretty ProgressDialog.
         if books_info:
-            d = ProgressDialog(self.gui, books_info, self.extract_element, db, target_format, attr,
+            d = ProgressDialog(self.gui, books_info, self.extract_element, db, target_format, attr, goal_format,
                                    status_msg_type=status_msg_type, action_type=action_type)
             if d.wasCanceled():
                 return
@@ -280,6 +299,15 @@ class InterfacePlugin(InterfaceAction):
             format = 'EPUB'
             try:
                 bookfile = kindle_obj.unpackEPUB(outdir)
+            except Exception as e:
+                if quiet:
+                    return False, str(e)
+                return showErrorDlg(str(e), self.gui, True)
+        elif target == 'ZIP':
+            errmsg = 'A'
+            format = 'ZIP'
+            try:
+                bookfile = kindle_obj.unpackZIP(outdir)
             except Exception as e:
                 if quiet:
                     return False, str(e)

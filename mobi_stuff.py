@@ -131,6 +131,15 @@ class mobiProcessor:
             raise Exception(_('Problem locating unpacked epub: {0}'.format(epub)))
         return epub
 
+    def unpackZIP(self, outdir):
+        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages)
+        kf8dir = os.path.join(outdir, 'mobi8')
+        kf8BaseName = os.path.splitext(os.path.basename(self.infile))[0]
+        zip = os.path.join(kf8dir, '{0}.zip'.format(kf8BaseName))
+        if not os.path.exists(zip):
+            raise Exception(_('Problem locating unpacked zip: {0}'.format(zip)))
+        return zip
+
     def writeSplitCombo(self, outdir):
         mobi_to_split = mobi_split(unicode_str(self.infile))
         outMobi = makeFileNames('MOBI-', self.infile, outdir)

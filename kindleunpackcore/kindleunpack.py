@@ -328,9 +328,9 @@ def processCRES(i, files, rscnames, sect, data, beg, rsc_ptr, use_hd):
         imgname = rscnames[rsc_ptr]
         imgdest = files.imgdir
     else:
-        imgname = "HDimage%05d.%s" % (i, imgtype)
+        imgname = "HDimage%05d.%s" % (i-beg+1, imgtype)
         imgdest = files.hdimgdir
-    print("Extracting HD image: {0:s} from section {1:d}".format(imgname,i))
+    print("Extracting HD image: {0:s} from section {1:d}".format(imgname,i-beg+1))
     outimg = os.path.join(imgdest, imgname)
     with open(pathof(outimg), 'wb') as f:
         f.write(data)
@@ -411,10 +411,10 @@ def processImage(i, files, rscnames, sect, data, beg, rsc_ptr, cover_offset):
             sect.setsectiondescription(i,"Mysterious Section, first four bytes %s extracting as %s" % (describe(data[0:4]), fname))
         return rscnames, rsc_ptr
 
-    imgname = "image%05d.%s" % (i, imgtype)
+    imgname = "image%05d.%s" % (i-beg+1, imgtype)
     if cover_offset is not None and i == beg + cover_offset:
-        imgname = "cover%05d.%s" % (i, imgtype)
-    print("Extracting image: {0:s} from section {1:d}".format(imgname,i))
+        imgname = "cover%05d.%s" % (i-beg+1, imgtype)
+    print("Extracting image: {0:s} from section {1:d}".format(imgname,i-beg+1))
     outimg = os.path.join(files.imgdir, imgname)
     with open(pathof(outimg), 'wb') as f:
         f.write(data)

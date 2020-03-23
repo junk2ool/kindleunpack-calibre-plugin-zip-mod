@@ -19,15 +19,17 @@ class ProgressDialog(QProgressDialog):
     '''
     Used to process Multiple selections of AZW3/AZW4 into EPUBs/PDFs.
     '''
-    def __init__(self, gui, books, callback_fn, db, target_format, attr, status_msg_type='books', action_type='Checking'):
+    def __init__(self, gui, books, callback_fn, db, target_format, attr, goal_format, status_msg_type='books', action_type='Checking'):
         self.total_count = len(books)
         QProgressDialog.__init__(self, '', 'Cancel', 0, self.total_count, gui)
         self.setMinimumWidth(500)
-        self.books, self.callback_fn, self.db, self.target_format, self.attr = books, callback_fn, db, target_format, attr
+        self.books, self.callback_fn, self.db, self.target_format, self.attr, self.goal_format = books, callback_fn, db, target_format, attr, goal_format
         self.action_type, self.status_msg_type = action_type, status_msg_type
         if attr == 'isKF8':
             self.kindle_type = 'KF8'
             self.goal = 'EPUB'
+            if goal_format == 'ZIP':
+                self.goal = 'ZIP'
         elif attr == 'isPrintReplica':
             self.kindle_type = 'PrintReplica'
             self.goal = 'PDF'
@@ -65,7 +67,10 @@ class ProgressDialog(QProgressDialog):
             if not kindle_obj.isEncrypted:
                 if getattr(kindle_obj, self.attr):
                     if format['goal_format'] not in all_formats:
-                        success, error = self.callback_fn(kindle_obj, book_id, self.target_format, True)
+                        target_format = self.target_format
+                        if format['goal_format'] == 'ZIP':
+                            target_format = 'ZIP'
+                        success, error = self.callback_fn(kindle_obj, book_id, target_format, True)
                         if success:
                             self.successes.append((book_id, dtitle))
                         elif error is None:
