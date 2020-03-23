@@ -22,6 +22,9 @@ import zipfile
 import binascii
 from .mobi_utils import mangle_fonts
 
+import distutils
+from distutils import dir_util
+
 class unpackException(Exception):
     pass
 
@@ -35,9 +38,10 @@ class ZipInfo(zipfile.ZipInfo):
 
 class fileNames:
 
-    def __init__(self, infile, outdir):
+    def __init__(self, infile, outdir, format = 'EPUB'):
         self.infile = infile
         self.outdir = outdir
+        self.format = format
         if not unipath.exists(self.outdir):
             unipath.mkdir(self.outdir)
         self.mobi7dir = os.path.join(self.outdir,'mobi7')
@@ -49,6 +53,7 @@ class fileNames:
         self.hdimgdir = os.path.join(self.outdir,'HDImages')
         if not unipath.exists(self.hdimgdir):
             unipath.mkdir(self.hdimgdir)
+        self.HDimages = os.path.join(self.outdir,'azw6_images')
         self.outbase = os.path.join(self.outdir, os.path.splitext(os.path.split(infile)[1])[0])
 
     def getInputFileBasename(self):
@@ -92,7 +97,7 @@ class fileNames:
             elif unipath.isdir(realfilePath):
                 self.zipUpDir(myzip, tdir, localfilePath)
 
-    def makeEPUB(self, usedmap, obfuscate_data, uid):
+    def makeEPUB(self, usedmap, obfuscate_data, uid, cover_offset):
         bname = os.path.join(self.k8dir, self.getInputFileBasename() + '.epub')
         bname_zip = os.path.join(self.k8dir, self.getInputFileBasename() + '.zip')
         # Create an encryption key for Adobe font obfuscation
@@ -152,24 +157,45 @@ xmlns:enc="http://www.w3.org/2001/04/xmlenc#" xmlns:deenc="http://ns.adobe.com/d
             with open(pathof(fileout),'wb') as f:
                 f.write(encryption.encode('utf-8'))
 
-        # ready to build epub
-        self.outzip = zipfile.ZipFile(pathof(bname), 'w')
+        # replace res HD images
+        self.replaceHDimages(self.HDimages, self.k8images, cover_offset)
 
-        # add the mimetype file uncompressed
-        mimetype = b'application/epub+zip'
-        fileout = os.path.join(self.k8dir,'mimetype')
-        with open(pathof(fileout),'wb') as f:
-            f.write(mimetype)
-        nzinfo = ZipInfo('mimetype', compress_type=zipfile.ZIP_STORED)
-        nzinfo.external_attr = 0o600 << 16 # make this a normal file
-        self.outzip.writestr(nzinfo, mimetype)
-        self.zipUpDir(self.outzip,self.k8dir,'META-INF')
-        self.zipUpDir(self.outzip,self.k8dir,'OEBPS')
-        self.outzip.close()
+        if self.format == 'EPUB':
+            # ready to build epub
+            self.outzip = zipfile.ZipFile(pathof(bname), 'w')
 
-        # ready to build zip
-        self.outzip = zipfile.ZipFile(pathof(bname_zip), 'w')
+            # add the mimetype file uncompressed
+            mimetype = b'application/epub+zip'
+            fileout = os.path.join(self.k8dir,'mimetype')
+            with open(pathof(fileout),'wb') as f:
+                f.write(mimetype)
+            nzinfo = ZipInfo('mimetype', compress_type=zipfile.ZIP_STORED)
+            nzinfo.external_attr = 0o600 << 16 # make this a normal file
+            self.outzip.writestr(nzinfo, mimetype)
+            self.zipUpDir(self.outzip,self.k8dir,'META-INF')
+            self.zipUpDir(self.outzip,self.k8dir,'OEBPS')
+            self.outzip.close()
+        elif self.format == 'ZIP':
+            # ready to build zip
+            self.outzip = zipfile.ZipFile(pathof(bname_zip), 'w')
 
-        # 
-        self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_STORED)
-        self.outzip.close()
+            # 
+            self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_STORED)
+            self.outzip.close()
+
+    def replaceHDimages(self, src_dir, dest_dir, cover_offset):
+        # replace res HD images
+        if unipath.exists(src_dir):
+            distutils.dir_util.copy_tree(src_dir, dest_dir)
+
+            # rename HD cover image
+            if cover_offset is not None:
+                imgtype = 'jpg'
+                imgname = "image%05d.%s" % (cover_offset+1, imgtype)
+                imgpath = os.path.join(dest_dir, imgname)
+                cvrname = "cover%05d.%s" % (cover_offset+1, imgtype)
+                cvrpath = os.path.join(dest_dir, cvrname)
+                if unipath.exists(imgpath):
+                    if unipath.exists(cvrpath):
+                        os.remove(cvrpath)
+                    os.rename(imgpath, cvrpath)

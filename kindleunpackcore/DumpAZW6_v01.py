@@ -8,6 +8,8 @@ import imghdr
 
 def get_image_type(imgname, imgdata=None):
     imgtype = imghdr.what(imgname, imgdata)
+    if imgtype == "jpeg":
+        imgtype = "jpg"
 
     # horrible hack since imghdr detects jxr/wdp as tiffs
     if imgtype is not None and imgtype == "tiff":
@@ -24,18 +26,22 @@ def get_image_type(imgname, imgdata=None):
                 last-=1
             # Be extra safe, check the trailing bytes, too.
             if imgdata[last-2:last] == b'\xFF\xD9':
-                imgtype = "jpeg"
+                imgtype = "jpg"
     return imgtype
 
 
-def processCRES(i, data):
+def processCRES(i, data, outdir):
     data = data[12:]
     imgtype = get_image_type(None, data)
     if imgtype is None:
         print "        Warning: CRES Section %s does not contain a recognised resource" % i
         imgtype = "dat"
-    imgname = "HDimage%05d.%s" % (i, imgtype)
-    imgdir = os.path.join(".", "azw6_images")
+    imgname = "image%05d.%s" % (i, imgtype)
+    if outdir is None:
+        imgdir = os.path.join(".", "azw6_images")
+    else:
+        imgdir = os.path.join(outdir, "azw6_images")
+    #print imgdir
     if not os.path.exists(imgdir):
         os.mkdir(imgdir)
     print "        Extracting HD image: {0:s} from section {1:d}".format(imgname,i)
@@ -263,35 +269,15 @@ def usage(progname):
     print "   Dump the image from an AZW6 HD container file"
     print "  "
     print "Usage:"
-    print "  %s -h infile.azw6" % progname
+    print "  %s -h infile.azw6(res) [outdir]" % progname
     print "  "
     print "Options:"
     print "    -h           print this help message"
 
-
-def main(argv=sys.argv):
-    print "DumpAZW6 v01"
-    progname = os.path.basename(argv[0])
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h")
-    except getopt.GetoptError, err:
-        print str(err)
-        usage(progname)
-        sys.exit(2)
-
-    if len(args) != 1:
-        usage(progname)
-        sys.exit(2)
-
-    for o, a in opts:
-        if o == "-h":
-            usage(progname)
-            sys.exit(0)
-
-    infile = args[0]
+def DumpAZW6(infile, outdir):
     infileext = os.path.splitext(infile)[1].upper()
     print infile, infileext
-    if infileext not in ['.AZW6']:
+    if infileext not in ['.AZW6'] and infileext not in ['.RES']:
         print "Error: first parameter must be a Kindle AZW6 HD container file."
         return 1
 
@@ -352,7 +338,7 @@ def main(argv=sys.argv):
                 if dt == "CONT":
                     desc="Cont Header"
                 elif dt == "CRES":
-                    processCRES(i, data)
+                    processCRES(i, data, outdir)
             else:
                 desc = dtext.encode('hex')
                 desc = desc + " " + dtext
@@ -365,6 +351,26 @@ def main(argv=sys.argv):
 
     return 0
 
+def main(argv=sys.argv):
+    print "DumpAZW6 v01"
+    progname = os.path.basename(argv[0])
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h")
+    except getopt.GetoptError, err:
+        print str(err)
+        usage(progname)
+        sys.exit(2)
+
+    if len(args) != 2:
+        usage(progname)
+        sys.exit(2)
+
+    for o, a in opts:
+        if o == "-h":
+            usage(progname)
+            sys.exit(0)
+
+    return DumpAZW6(args[0], args[1])
 
 if __name__ == '__main__':
     sys.exit(main())

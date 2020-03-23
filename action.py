@@ -6,6 +6,7 @@ __license__   = 'GPL v3'
 __docformat__ = 'restructuredtext en'
 
 import os
+import shutil
 
 from functools import partial
 
@@ -282,6 +283,7 @@ class InterfacePlugin(InterfaceAction):
         '''
         outdir = self.directoryChooser()
         if outdir:
+            kindle_obj.setContentDir(cfg.plugin_prefs['Kindle_Content_Folder'])
             try:
                 kindle_obj.unpackMOBI(outdir)
             except Exception as e:
@@ -294,6 +296,7 @@ class InterfacePlugin(InterfaceAction):
         '''
         outdir = PersistentTemporaryDirectory()
         errmsg = ''
+        kindle_obj.setContentDir(cfg.plugin_prefs['Kindle_Content_Folder'])
         if target == 'AZW3':
             errmsg = 'An'
             format = 'EPUB'
@@ -329,6 +332,9 @@ class InterfacePlugin(InterfaceAction):
                     return False, None
                 return showErrorDlg(errmsg, self.gui)
             current_idx = self.gui.library_view.currentIndex()
+            # remove outdir
+            shutil.rmtree(outdir)
+            #
             if current_idx.isValid():
                 self.gui.library_view.model().current_changed(current_idx, current_idx)
             if quiet:

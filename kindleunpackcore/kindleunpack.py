@@ -11,10 +11,12 @@ import os
 import sys
 # import codecs
 import traceback
+import glob
 
 from .compatibility_utils import PY2, binary_type, utf8_str, unicode_str
 from .compatibility_utils import unicode_argv, add_cp65001_codec
 from .compatibility_utils import hexlify
+from .DumpAZW6_v01 import DumpAZW6
 
 add_cp65001_codec()
 
@@ -597,9 +599,14 @@ def processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfus
         nav = NAVProcessor(files)
         nav.writeNAV(ncx_data, guidetext, metadata)
 
+    # get cover offset
+    cover_offset = None
+    if CREATE_COVER_PAGE:
+        cover_offset = int(mh.metadata.get('CoverOffset', ['-1'])[0])
+
     # make an epub-like structure of it all
     print("Creating an epub-like file")
-    files.makeEPUB(usedmap, obfuscate_data, uuid)
+    files.makeEPUB(usedmap, obfuscate_data, uuid, cover_offset)
 
 
 def processMobi7(mh, metadata, sect, files, rscnames):
@@ -732,7 +739,7 @@ def processUnknownSections(mh, sect, files, K8Boundary):
             sect.setsectiondescription(i, description)
 
 
-def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=False, epubver='2', use_hd=False):
+def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=False, epubver='A', use_hd=False):
     global DUMP
     global WRITE_RAW_DATA
     rscnames = []
@@ -780,9 +787,9 @@ def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=Fa
             # processing first part of a combination file
             end = K8Boundary
 
-        cover_offset = int(metadata.get('CoverOffset', ['-1'])[0])
-        if not CREATE_COVER_PAGE:
-            cover_offset = None
+        cover_offset = None
+        if CREATE_COVER_PAGE:
+            cover_offset = int(metadata.get('CoverOffset', ['-1'])[0])
 
         for i in range(beg, end):
             data = sect.loadSection(i)
@@ -851,7 +858,7 @@ def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=Fa
     return
 
 
-def unpackBook(infile, outdir, apnxfile=None, epubver='2', use_hd=False, dodump=False, dowriteraw=False, dosplitcombos=False):
+def unpackBook(infile, outdir, apnxfile=None, epubver='A', use_hd=False, dodump=False, dowriteraw=False, dosplitcombos=False, contentdir='', format='EPUB'):
     global DUMP
     global WRITE_RAW_DATA
     global SPLIT_COMBO_MOBIS
@@ -867,7 +874,7 @@ def unpackBook(infile, outdir, apnxfile=None, epubver='2', use_hd=False, dodump=
     if apnxfile is not None:
         apnxfile = unicode_str(apnxfile)
 
-    files = fileNames(infile, outdir)
+    files = fileNames(infile, outdir, format)
 
     # process the PalmDoc database header and verify it is a mobi
     sect = Sectionizer(infile)
@@ -921,6 +928,19 @@ def unpackBook(infile, outdir, apnxfile=None, epubver='2', use_hd=False, dodump=
 
     if hasK8:
         files.makeK8Struct()
+
+    #  call DumpAZW6
+    CDEContentKey = mh.metadata.get('CDEContentKey')
+    resdir = os.path.join(contentdir, CDEContentKey[0] + '_EBOK')
+    res_files = glob.glob(os.path.join(resdir, '*.res'))
+    if len(res_files):
+        for res_path in res_files:
+            DumpAZW6(res_path, outdir)
+    else:
+        res_files = glob.glob(os.path.join(os.path.dirname(infile), '*.res'))
+        for res_path in res_files:
+            DumpAZW6(res_path, outdir)
+    #
 
     process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, False, epubver, use_hd)
 

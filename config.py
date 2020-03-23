@@ -46,7 +46,12 @@ except:
     pass
 plugin_prefs.defaults['Always_Use_Unpack_Folder'] = False
 plugin_prefs.defaults['Use_HD_Images'] = False
-plugin_prefs.defaults['Epub_Version'] = '2'
+plugin_prefs.defaults['Epub_Version'] = 'A'
+plugin_prefs.defaults['Kindle_Content_Folder'] = 'c:/'
+try:
+    plugin_prefs.defaults['Kindle_Content_Folder'] = expanduser('~')
+except:
+    pass
 
 class ConfigWidget(QWidget):
 
@@ -105,6 +110,26 @@ class ConfigWidget(QWidget):
         else:
             self.epub_version_combobox.setCurrentIndex(int(plugin_prefs['Epub_Version'])-1)
 
+        # --- Directory Options ---
+        kindle_directory_group_box = QGroupBox(_('Kindle Content Directory:'), self)
+        layout.addWidget(kindle_directory_group_box)
+        kindle_directory_group_box_layout = QVBoxLayout()
+        kindle_directory_group_box.setLayout(kindle_directory_group_box_layout)
+
+        # Directory path Textbox
+        # Load the textbox with the current preference setting
+        self.kindle_directory_txtBox = QLineEdit(plugin_prefs['Kindle_Content_Folder'], self)
+        self.kindle_directory_txtBox.setToolTip(_('<p>Kindle Content directory.'))
+        kindle_directory_group_box_layout.addWidget(self.kindle_directory_txtBox)
+        self.kindle_directory_txtBox.setReadOnly(True)
+
+        # Folder select button
+        kindle_directory_button = QPushButton(_('Select/Change Kindle Content Directory'), self)
+        kindle_directory_button.setToolTip(_('<p>Select/Change Kindle Content directory.'))
+        # Connect button to the getDirectory function
+        kindle_directory_button.clicked.connect(self.getDirectoryKindleContent)
+        kindle_directory_group_box_layout.addWidget(kindle_directory_button)
+
     def save_settings(self):
         # Save current dialog sttings back to JSON config file
             plugin_prefs['Unpack_Folder'] = text_type(self.directory_txtBox.displayText())
@@ -114,6 +139,7 @@ class ConfigWidget(QWidget):
                 plugin_prefs['Epub_Version'] = 'A'
             else:
                 plugin_prefs['Epub_Version'] = text_type(self.epub_version_combobox.currentText())[4:]
+            plugin_prefs['Kindle_Content_Folder'] = text_type(self.kindle_directory_txtBox.displayText())
 
     def getDirectory(self):
         c = choose_dir(self, _(PLUGIN_NAME + 'dir_chooser'),
@@ -122,6 +148,14 @@ class ConfigWidget(QWidget):
             self.directory_txtBox.setReadOnly(False)
             self.directory_txtBox.setText(c)
             self.directory_txtBox.setReadOnly(True)
+
+    def getDirectoryKindleContent(self):
+        c = choose_dir(self, _(PLUGIN_NAME + 'dir_chooser'),
+                _('Select Kindle Content Directory'))
+        if c:
+            self.kindle_directory_txtBox.setReadOnly(False)
+            self.kindle_directory_txtBox.setText(c)
+            self.kindle_directory_txtBox.setReadOnly(True)
 
     def validate(self):
         # This is just to catch the situation where somone might

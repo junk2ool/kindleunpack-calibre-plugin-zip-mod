@@ -100,6 +100,14 @@ class mobiProcessor:
 
         self.ePubVersion = cfg.plugin_prefs['Epub_Version']
         self.useHDImages = cfg.plugin_prefs['Use_HD_Images']
+        self.kindleContentDir = cfg.plugin_prefs['Kindle_Content_Folder']
+        self.contentdir = ''
+
+    def setContentDir(self, contentdir):
+        self.contentdir = contentdir
+
+    def getContentDir(self):
+        return self.contentdir
 
     def getPDFFile(self, outdir):
         _mu.unpackBook(self.infile, outdir)
@@ -120,10 +128,10 @@ class mobiProcessor:
         return pdf
 
     def unpackMOBI(self, outdir):
-        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages)
+        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages, contentdir=self.contentdir)
 
     def unpackEPUB(self, outdir):
-        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages)
+        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages, contentdir=self.contentdir, format='EPUB')
         kf8dir = os.path.join(outdir, 'mobi8')
         kf8BaseName = os.path.splitext(os.path.basename(self.infile))[0]
         epub = os.path.join(kf8dir, '{0}.epub'.format(kf8BaseName))
@@ -132,7 +140,7 @@ class mobiProcessor:
         return epub
 
     def unpackZIP(self, outdir):
-        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages)
+        _mu.unpackBook(self.infile, outdir, epubver=self.ePubVersion, use_hd=self.useHDImages, contentdir=self.contentdir, format='ZIP')
         kf8dir = os.path.join(outdir, 'mobi8')
         kf8BaseName = os.path.splitext(os.path.basename(self.infile))[0]
         zip = os.path.join(kf8dir, '{0}.zip'.format(kf8BaseName))
