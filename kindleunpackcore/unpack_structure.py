@@ -97,7 +97,7 @@ class fileNames:
             elif unipath.isdir(realfilePath):
                 self.zipUpDir(myzip, tdir, localfilePath)
 
-    def makeEPUB(self, usedmap, obfuscate_data, uid, cover_offset):
+    def makeEPUB(self, usedmap, obfuscate_data, uid, cover_offset, zipcompresstype):
         bname = os.path.join(self.k8dir, self.getInputFileBasename() + '.epub')
         bname_zip = os.path.join(self.k8dir, self.getInputFileBasename() + '.zip')
         # Create an encryption key for Adobe font obfuscation
@@ -180,7 +180,10 @@ xmlns:enc="http://www.w3.org/2001/04/xmlenc#" xmlns:deenc="http://ns.adobe.com/d
             self.outzip = zipfile.ZipFile(pathof(bname_zip), 'w')
 
             # 
-            self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_STORED)
+            if zipcompresstype != 'S':
+                self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_DEFLATED)
+            else:
+                self.zipUpDir(self.outzip,os.path.join(self.k8dir, 'OEBPS/Images'), '', zipfile.ZIP_STORED)
             self.outzip.close()
 
     def replaceHDimages(self, src_dir, dest_dir, cover_offset):

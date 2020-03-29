@@ -117,7 +117,15 @@ class NAVProcessor(object):
             indent1 = '  ' * (2 + lvl * 2)
             indent2 = '  ' * (3 + lvl * 2)
             xhtml += indent1 + '<ol>\n'
-            xhtml += indent1 + '  <li><a href="cover_page.xhtml">表紙</a></li>\n'
+            #
+            nav_cover = False
+            for i in range(start, end):
+                if '表紙' in indx_data[i].values():
+                    nav_cover = True
+                    break
+            if not nav_cover:
+                xhtml += indent1 + '  <li><a href="cover_page.xhtml">表紙</a></li>\n'
+            #
             for i in range(start, end):
                 e = indx_data[i]
                 htmlfile = e['filename']

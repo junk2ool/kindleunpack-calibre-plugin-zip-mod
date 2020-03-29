@@ -33,6 +33,12 @@ from calibre.gui2 import choose_dir, error_dialog
 
 from calibre_plugins.kindleunpack_plugin.__init__ import PLUGIN_NAME, PLUGIN_VERSION
 
+# pulls in translation files for _() strings
+try:
+    load_translations()
+except NameError:
+    pass # load_translations() added in calibre 1.9
+
 PLUGIN_ICONS = ['images/explode3.png', 'images/acrobat.png']
 
 # This is where all preferences for this plugin will be stored.
@@ -52,6 +58,8 @@ try:
     plugin_prefs.defaults['Kindle_Content_Folder'] = expanduser('~')
 except:
     pass
+plugin_prefs.defaults['Zip_Compress_Type'] = 'S'
+plugin_prefs.defaults['Always_Delete_Temp_Files'] = True
 
 class ConfigWidget(QWidget):
 
@@ -99,28 +107,41 @@ class ConfigWidget(QWidget):
         # Load the checkbox with the current preference setting
         self.use_hd_images.setChecked(plugin_prefs['Use_HD_Images'])
 
-        combo_label = QLabel('Select epub version output:', self)
+        combo_label = QLabel(_('Select epub version output:'), self)
         misc_group_box_layout.addWidget(combo_label)
         self.epub_version_combobox = QComboBox()
         self.epub_version_combobox.setToolTip(_('<p>Select the type of OPF file to create.'))
         misc_group_box_layout.addWidget(self.epub_version_combobox)
-        self.epub_version_combobox.addItems(['Auto-detect', 'ePub2', 'ePub3'])
+        self.epub_version_combobox.addItems([_('Auto-detect'), _('ePub2'), _('ePub3')])
         if plugin_prefs['Epub_Version'] == 'A':
             self.epub_version_combobox.setCurrentIndex(0)
         else:
             self.epub_version_combobox.setCurrentIndex(int(plugin_prefs['Epub_Version'])-1)
 
-        # --- Directory Options ---
-        kindle_directory_group_box = QGroupBox(_('Kindle Content Directory:'), self)
-        layout.addWidget(kindle_directory_group_box)
-        kindle_directory_group_box_layout = QVBoxLayout()
-        kindle_directory_group_box.setLayout(kindle_directory_group_box_layout)
+        # --- ZIP mod Options ---
+        zip_mod_group_box = QGroupBox(_('ZIP mod settings:'), self)
+        layout.addWidget(zip_mod_group_box)
+        zip_mod_group_box_layout = QVBoxLayout()
+        zip_mod_group_box.setLayout(zip_mod_group_box_layout)
+
+        zip_mod_combo_label = QLabel(_('Select zip compress type:'), self)
+        zip_mod_group_box_layout.addWidget(zip_mod_combo_label)
+        self.zip_compress_type_combobox = QComboBox()
+        self.zip_compress_type_combobox.setToolTip(_('<p>Select the type of zip compress.'))
+        zip_mod_group_box_layout.addWidget(self.zip_compress_type_combobox)
+        self.zip_compress_type_combobox.addItems([_('STORE'), _('DEFLATE')])
+        if plugin_prefs['Zip_Compress_Type'] == 'S':
+            self.zip_compress_type_combobox.setCurrentIndex(0)
+        else:
+            self.zip_compress_type_combobox.setCurrentIndex(1)
 
         # Directory path Textbox
         # Load the textbox with the current preference setting
+        kindle_directory_label = QLabel(_('Kindle Content Directory:'), self)
+        zip_mod_group_box_layout.addWidget(kindle_directory_label)
         self.kindle_directory_txtBox = QLineEdit(plugin_prefs['Kindle_Content_Folder'], self)
         self.kindle_directory_txtBox.setToolTip(_('<p>Kindle Content directory.'))
-        kindle_directory_group_box_layout.addWidget(self.kindle_directory_txtBox)
+        zip_mod_group_box_layout.addWidget(self.kindle_directory_txtBox)
         self.kindle_directory_txtBox.setReadOnly(True)
 
         # Folder select button
@@ -128,18 +149,30 @@ class ConfigWidget(QWidget):
         kindle_directory_button.setToolTip(_('<p>Select/Change Kindle Content directory.'))
         # Connect button to the getDirectory function
         kindle_directory_button.clicked.connect(self.getDirectoryKindleContent)
-        kindle_directory_group_box_layout.addWidget(kindle_directory_button)
+        zip_mod_group_box_layout.addWidget(kindle_directory_button)
+
+        self.delete_temp_files = QCheckBox(_('Always delete temporary files'), self)
+        self.delete_temp_files.setToolTip(_('<p>When checked... Delete temporary files at end of unpack.'))
+        zip_mod_group_box_layout.addWidget(self.delete_temp_files)
+        # Load the checkbox with the current preference setting
+        self.delete_temp_files.setChecked(plugin_prefs['Always_Delete_Temp_Files'])
 
     def save_settings(self):
         # Save current dialog sttings back to JSON config file
             plugin_prefs['Unpack_Folder'] = text_type(self.directory_txtBox.displayText())
             plugin_prefs['Always_Use_Unpack_Folder'] = self.default_folder_check.isChecked()
             plugin_prefs['Use_HD_Images'] = self.use_hd_images.isChecked()
-            if text_type(self.epub_version_combobox.currentText()) == 'Auto-detect':
+            if text_type(self.epub_version_combobox.currentText()) == _('Auto-detect'):
                 plugin_prefs['Epub_Version'] = 'A'
             else:
                 plugin_prefs['Epub_Version'] = text_type(self.epub_version_combobox.currentText())[4:]
+            # ZIP mod
+            if text_type(self.zip_compress_type_combobox.currentText()) == _('STORE'):
+                plugin_prefs['Zip_Compress_Type'] = 'S'
+            else:
+                plugin_prefs['Zip_Compress_Type'] = 'D'
             plugin_prefs['Kindle_Content_Folder'] = text_type(self.kindle_directory_txtBox.displayText())
+            plugin_prefs['Always_Delete_Temp_Files'] = self.delete_temp_files.isChecked()
 
     def getDirectory(self):
         c = choose_dir(self, _(PLUGIN_NAME + 'dir_chooser'),
@@ -162,9 +195,9 @@ class ConfigWidget(QWidget):
         # manually enter a non-existent path in the Default path textbox.
         # Shouldn't be possible at this point.
         if not os.path.exists(self.directory_txtBox.text()):
-            errmsg = '<p>The path specified for the Default Unpack folder does not exist.</p>' \
-                        '<p>Your latest preference changes will <b>NOT</b> be saved!</p>' + \
-                        '<p>You should configure again and make sure your settings are correct.'
+            errmsg = _('<p>The path specified for the Default Unpack folder does not exist.</p>')
+            errmsg += _('<p>Your latest preference changes will <b>NOT</b> be saved!</p>')
+            errmsg += _('<p>You should configure again and make sure your settings are correct.')
             error_dialog(None, _(PLUGIN_NAME + ' v' + PLUGIN_VERSION),
                                     _(errmsg), show=True)
             return False

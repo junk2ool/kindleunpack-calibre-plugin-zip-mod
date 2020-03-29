@@ -1,26 +1,26 @@
 /*
- KindleUnpack - The Plugin + ZIP mod v.0.2
+ KindleUnpack - The Plugin + ZIP mod v.0.3
    Copyright (C) 2020 junk2ool
  */
 
-���T�v
-calibre�pKindleUnpack�v���O�C������������azw���摜�݂̂�zip�ł��o�͉\�ɂ������̂ł��B
-DumpAZW6����荞��ł���̂�res������Β��ɂ���HD�摜�������ւ��ďo�͂��܂��B(�v�ݒ�)
-���łɌl�I�Ȃ��ƂŁA
-�E�摜�̃t�@�C�����̘A�Ԃ̊J�n��00001�ɕύX�B(DumpAZW6�̏o�̓t�@�C���Ɠ����A�Ԃ�)
-�EJPEG�摜�̊g���q��jpeg����jpg�ɕύX�B
-�Ezip�͉摜�������Ƃǂ����債�ďk�܂Ȃ��̂Ŗ����k�ō쐬�����悤�ɁB
-�E�t�@�C���ϊ���ɏ��Ж��Ɉꎞ�t�@�C�������ׂď����悤�ɁB
-�@(��ʂ̃t�@�C����ϊ������ꍇcalibre���I������܂�TEMP�f�B���N�g���̗e�ʂ��������邽��)
-�����Ă��܂��B
+■概要
+calibre用KindleUnpackプラグインを改造してazw3を画像のみのzipでも出力可能にしたものです。
+DumpAZW6も取り込んであるのでresがあれば中にあるHD画像を差し替えて出力します。(要設定)
+ついでに個人的なことで、
+・画像のファイル名の連番の開始を00001に変更。(DumpAZW6の出力ファイルと同じ連番に)
+・JPEG画像の拡張子をjpegからjpgに変更。
+・zipは画像だけだとどうせ大して縮まないので無圧縮で作成されるように。(設定で圧縮するように変更可能)
+・ファイル変換後に書籍毎に一時ファイルをすべて消すように。(設定で変更可能)
+　(大量のファイルを変換した場合calibreを終了するまでTEMPディレクトリの容量を圧迫するため)
+をしています。
 
-���g�p���@
-KindleUnpack�̃��j���[��ZIP�ŏo�͂��鍀�ڂ��o���Ă���̂ł�������s���Ă��������B
-DumpAZW6���g�p����HD�摜�̍����ւ��@�\���g���ɂ́A���̃v���O�C���̐ݒ��Kindle Content�̃f�B���N�g���̈ʒu��ݒ肵�Ă��������B
-���̒��̏��Ђ̃f�B���N�g��(*_EBOK)��res�t�@�C��������Ύ����I�ɍ����ւ���EPUB��ZIP���쐬���܂��B
-��L�̏ꏊ�Ɍ�����Ȃ��ꍇ�́Acalibre���C�u�����̏��Ђ̃f�B���N�g������res�t�@�C����T���č����ւ��܂��B
+■使用方法
+KindleUnpackのメニューにzipで出力する項目が出来ているのでそれを実行してください。
+DumpAZW6を使用したHD画像の差し替え機能を使うには、KindleUnpackのメニューの設定からKindle Contentのディレクトリの位置を設定してください。
+その中の書籍のディレクトリ(*_EBOK)にresファイルがあれば自動的に差し替えてepubやzipを作成します。
+上記の場所に見つからない場合は、calibreライブラリの書籍のディレクトリからresファイルを探して差し替えます。
 
-���ύX����
+■変更部分
 __init__.py
 action.py
 config.py
@@ -31,27 +31,36 @@ kindleunpackcore/DumpAZW6_v01.py
 kindleunpackcore/kindleunpack.py
 kindleunpackcore/mobi_cover.py
 kindleunpackcore/unpack_structure.py
-��L�����ZIP�ŏo�͂ł���悤�ɃR�[�h���C���A�ǉ����Ă��܂��B
+kindleunpackcore/DumpAZW6_v01.py
+上記を主にzipで出力できるようにコードを修正、追加しています。
 
-���g�p�������̓�
+■使用したもの等
 KindleUnpack - The Plugin Version: 0.82.1 Released: 18 Dec, 2019
-https://plugins.calibre-ebook.com/
+https://www.mobileread.com/forums/showthread.php?t=171529
+https://github.com/dougmassay/kindleunpack-calibre-plugin
 DumpAZW6_v01.py
 https://gist.github.com/fireattack/99b7d9f6b2896cfa33944555d9e2a158
-���łɁA
+ついでに、
 http://rio2016.5ch.net/test/read.cgi/ebooks/1526467330/395
-��>>395����̏C������荞��ł��܂��B
+の>>395さんの修正も取り込んでいます。
 
-�����C�Z���X
-����GPL v3�Ȃ̂ł����GPL v3�Ɋ�Â��܂��B
+■ライセンス
+GNU General Public License v3.0
 
-������
+■履歴
+2020/03/29 v.0.3
+・設定ダイアログにzipの圧縮タイプを追加。(デフォルトは無圧縮)
+・設定ダイアログに一時ファイルを常に削除するを追加。(デフォルトはオン)
+・上記に伴い設定ダイアログを整理。
+・テキストの一部日本語表示に対応。
+・nav.xhtmlに存在しない表紙が登録され、表紙が二重になってしまうことがあったのを修正。
+
 2020/03/17 v.0.2
-�E�ݒ��Kindle Content�f�B���N�g����ݒ肷�鍀�ڂ�ǉ��B
-�EDumpAZW6�̋@�\��ǉ��B(��L�̈ʒu��calibre���C�u�����̏��Ђ̃f�B���N�g����res�������HD�摜�ƍ����ւ���悤��)
-�EEPUB�o�͂̃f�t�H���g�o�[�W������Auto-detect�ɕύX�B
-�E�t�@�C���ϊ���ɏ��Ж��Ɉꎞ�t�@�C�������ׂď����悤�ɕύX�B
-�E�z�z�t�@�C���̍\����ύX�B
+・設定にKindle Contentディレクトリを設定する項目を追加。
+・DumpAZW6の機能を追加。(上記の位置かcalibreライブラリの書籍のディレクトリにresがあればHD画像と差し替えるように)
+・epub出力のデフォルトバージョンをAuto-detectに変更。
+・ファイル変換後に書籍毎に一時ファイルをすべて消すように変更。
+・配布ファイルの構造を変更。
 
 2020/03/14 v.0.1
-�E�Ȃ�ƂȂ��`�ɂȂ����̂Ō��J
+・なんとなく形になったので公開

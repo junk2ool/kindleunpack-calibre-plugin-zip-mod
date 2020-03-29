@@ -13,7 +13,7 @@ from calibre.customize import InterfaceActionBase
 
 PLUGIN_NAME = 'KindleUnpack - The Plugin + ZIP mod'
 PLUGIN_DESCRIPTION = '\nUnpacks a Kindle Book/MOBI into its source components.'
-PLUGIN_VERSION_TUPLE = (0, 2, 0)
+PLUGIN_VERSION_TUPLE = (0, 3, 0)
 PLUGIN_VERSION = '.'.join([str(x) for x in PLUGIN_VERSION_TUPLE])
 PLUGIN_AUTHORS = \
 """junk2ool,

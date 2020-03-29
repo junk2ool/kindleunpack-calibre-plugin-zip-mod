@@ -466,7 +466,7 @@ def processPrintReplica(metadata, files, rscnames, mh):
     opf.writeOPF()
 
 
-def processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfuscate_data, apnxfile=None, epubver='2'):
+def processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfuscate_data, apnxfile=None, epubver='A', zipcompresstype='S'):
     global DUMP
     global WRITE_RAW_DATA
 
@@ -606,7 +606,7 @@ def processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfus
 
     # make an epub-like structure of it all
     print("Creating an epub-like file")
-    files.makeEPUB(usedmap, obfuscate_data, uuid, cover_offset)
+    files.makeEPUB(usedmap, obfuscate_data, uuid, cover_offset, zipcompresstype)
 
 
 def processMobi7(mh, metadata, sect, files, rscnames):
@@ -739,7 +739,7 @@ def processUnknownSections(mh, sect, files, K8Boundary):
             sect.setsectiondescription(i, description)
 
 
-def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=False, epubver='A', use_hd=False):
+def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=False, epubver='A', use_hd=False, zipcompresstype='S'):
     global DUMP
     global WRITE_RAW_DATA
     rscnames = []
@@ -846,7 +846,7 @@ def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=Fa
 
         # KF8 (Mobi 8)
         if mh.isK8():
-            processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfuscate_data, apnxfile, epubver)
+            processMobi8(mh, metadata, sect, files, rscnames, pagemapproc, k8resc, obfuscate_data, apnxfile, epubver, zipcompresstype)
 
         # Old Mobi (Mobi 7)
         elif not k8only:
@@ -858,7 +858,7 @@ def process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, k8only=Fa
     return
 
 
-def unpackBook(infile, outdir, apnxfile=None, epubver='A', use_hd=False, dodump=False, dowriteraw=False, dosplitcombos=False, contentdir='', format='EPUB'):
+def unpackBook(infile, outdir, apnxfile=None, epubver='A', use_hd=False, dodump=False, dowriteraw=False, dosplitcombos=False, contentdir='', format='EPUB', zipcompresstype='S'):
     global DUMP
     global WRITE_RAW_DATA
     global SPLIT_COMBO_MOBIS
@@ -930,8 +930,10 @@ def unpackBook(infile, outdir, apnxfile=None, epubver='A', use_hd=False, dodump=
         files.makeK8Struct()
 
     #  call DumpAZW6
+    # ASIN = mh.metadata.get('ASIN')
     CDEContentKey = mh.metadata.get('CDEContentKey')
-    resdir = os.path.join(contentdir, CDEContentKey[0] + '_EBOK')
+    cdeType = mh.metadata.get('cdeType')
+    resdir = os.path.join(contentdir, '{}_{}'.format(CDEContentKey[0], cdeType[0]))
     res_files = glob.glob(os.path.join(resdir, '*.res'))
     if len(res_files):
         for res_path in res_files:
@@ -942,7 +944,7 @@ def unpackBook(infile, outdir, apnxfile=None, epubver='A', use_hd=False, dodump=
             DumpAZW6(res_path, outdir)
     #
 
-    process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, False, epubver, use_hd)
+    process_all_mobi_headers(files, apnxfile, sect, mhlst, K8Boundary, False, epubver, use_hd, zipcompresstype)
 
     if DUMP:
         sect.dumpsectionsinfo()

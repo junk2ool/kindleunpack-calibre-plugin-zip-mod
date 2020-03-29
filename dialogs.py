@@ -15,13 +15,19 @@ except ImportError:
 from calibre.gui2.dialogs.message_box import MessageBox
 from calibre_plugins.kindleunpack_plugin.__init__ import (PLUGIN_NAME, PLUGIN_VERSION)
 
+# pulls in translation files for _() strings
+try:
+    load_translations()
+except NameError:
+    pass # load_translations() added in calibre 1.9
+
 class ProgressDialog(QProgressDialog):
     '''
     Used to process Multiple selections of AZW3/AZW4 into EPUBs/PDFs.
     '''
-    def __init__(self, gui, books, callback_fn, db, target_format, attr, goal_format, status_msg_type='books', action_type='Checking'):
+    def __init__(self, gui, books, callback_fn, db, target_format, attr, goal_format, status_msg_type=_('books'), action_type=_('Checking')):
         self.total_count = len(books)
-        QProgressDialog.__init__(self, '', 'Cancel', 0, self.total_count, gui)
+        QProgressDialog.__init__(self, '', _('Cancel'), 0, self.total_count, gui)
         self.setMinimumWidth(500)
         self.books, self.callback_fn, self.db, self.target_format, self.attr, self.goal_format = books, callback_fn, db, target_format, attr, goal_format
         self.action_type, self.status_msg_type = action_type, status_msg_type
@@ -35,7 +41,7 @@ class ProgressDialog(QProgressDialog):
             self.goal = 'PDF'
         self.gui = gui
         zero = 0
-        self.setWindowTitle('{0} {1} {2} ({3} issues)...'.format(self.action_type, self.total_count, self.status_msg_type, zero))
+        self.setWindowTitle(_('{0} {1} {2} ({3} issues)...').format(self.action_type, self.total_count, self.status_msg_type, zero))
         self.i, self.successes, self.failures = 0, [], []
         QTimer.singleShot(0, self.do_multiple_book_action)
         self.exec_()
@@ -56,9 +62,9 @@ class ProgressDialog(QProgressDialog):
         else:
             all_formats = []
 
-        self.setWindowTitle('{0} {1} {2}  ({3} issues)...'.format(self.action_type, self.total_count,
+        self.setWindowTitle(_('{0} {1} {2} ({3} issues)...').format(self.action_type, self.total_count,
                                                                 self.status_msg_type, len(self.failures)))
-        self.setLabelText('{0}: {1}'.format(self.action_type, dtitle))
+        self.setLabelText(_('{0}: {1}').format(self.action_type, dtitle))
 
         if self.target_format in format_dict.keys():
             format = format_dict[self.target_format].get_format_details()
@@ -74,17 +80,17 @@ class ProgressDialog(QProgressDialog):
                         if success:
                             self.successes.append((book_id, dtitle))
                         elif error is None:
-                            self.failures.append((5, dtitle, '{0} already has a {1} format. Won\'t overwrite.'.format(dtitle, format['goal_format'])))
+                            self.failures.append((5, dtitle, _('{0} already has a {1} format. Won\'t overwrite.').format(dtitle, format['goal_format'])))
                         else:
-                            self.failures.append((4, dtitle, 'Unknown error processing {0}\'s {1} format'.format(dtitle, self.target_format)))
+                            self.failures.append((4, dtitle, _('Unknown error processing {0}\'s {1} format').format(dtitle, self.target_format)))
                     else:
-                        self.failures.append((5, dtitle, '{0} already has a {1} format. Won\'t overwrite.'.format(dtitle, format['goal_format'])))
+                        self.failures.append((5, dtitle, _('{0} already has a {1} format. Won\'t overwrite.').format(dtitle, format['goal_format'])))
                 else:
-                    self.failures.append((3, dtitle, '{0}\'s {1} format is not a {2} book.'.format(dtitle, self.target_format, self.kindle_type)))
+                    self.failures.append((3, dtitle, _('{0}\'s {1} format is not a {2} book.').format(dtitle, self.target_format, self.kindle_type)))
             else:
-                self.failures.append((2, dtitle, '{0} is encrypted.'.format(dtitle)))
+                self.failures.append((2, dtitle, _('{0} is encrypted.').format(dtitle)))
         else:
-            self.failures.append((1, dtitle, '{0} has no {1} format to work with.'.format(dtitle, self.target_format)))
+            self.failures.append((1, dtitle, _('{0} has no {1} format to work with.').format(dtitle, self.target_format)))
 
         self.setValue(self.i)
 
